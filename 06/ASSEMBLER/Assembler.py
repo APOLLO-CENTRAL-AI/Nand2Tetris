@@ -53,18 +53,31 @@ jump = {
 }
 
 class Assembler():
+    x : bool
     def __init__(self, asmFile):
-        self.Code = Code()
+        self.Code = Code(comp, dest, jump)
         self.Parser = Parser()
+        x = False
+        while x is False:
+            x = self.verifyfile(asmFile)
         self.asm = self.readasmFile(asmFile)
 
+    def verifyfile(self, asmFile : str) -> bool:
+        try:
+            with open(asmFile, "r") as x:
+                x.readline(1)
+                return True
+        except:
+            return False
+            
     def readasmFile(self, asmFile : str) -> list:
-       with open(asmFile, mode = "r") as file:
-            return file.readlines()
+        with open(asmFile, mode = "r") as file:
+            list = file.readlines()
+        return list
 
     def MnemonicsToBinary(self):
         for line in self.asm:
-            self.Parser.line = line
+            self.Parser.line = line.replace(' ', '')
             match(self.Parser.instructionType()):
                 case "A_INSTRUCTION":
                     self.Parser.symbol()
@@ -80,3 +93,8 @@ class Assembler():
                     comp = self.Code.comp(self.Parser.comp())
                 case "L_INSTRUCTION":
                     self.Parser.symbol()
+
+if __name__ == '__main__':
+    asm = Assembler(input("""
+Please enter assembler file name.\n
+File must be in current directory.\n"""))
