@@ -102,19 +102,25 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
 
     def MnemonicsToBinary(self):
         self.asm = self.getasmFile()
+        breakpoint()
         for line in self.asm:
-            self.Parser.line = line.replace(' ', '')
-            match(self.Parser.instructionType()):
-                case "A_INSTRUCTION":
-                    self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
+            if re.search('//', line) is None:
+                line = line.rstrip()
+                line = line.replace(' ', '')
+                self.Parser.line = line
+                breakpoint()
+                match(self.Parser.instructionType()):
+                    case "A_INSTRUCTION":
+                        self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
                     
-                case "C_INSTRUCTION":
-                    self.dest = self.Parser.dest() if self.Parser.dest() else '000'
-                    self.jump = self.Parser.jump() if self.Parser.jump() else '000'
-                    self.comp = self.Parser.comp() if self.Parser.comp() else '0000000'
-                case "L_INSTRUCTION":
-                    self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
-
+                    case "C_INSTRUCTION":
+                        self.dest = self.Parser.dest() if self.Parser.dest() else '000'
+                        self.jump = self.Parser.jump() if self.Parser.jump() else '000'
+                        self.comp = self.Parser.comp() if self.Parser.comp() else '0000000'
+                    case "L_INSTRUCTION":
+                        self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
+            else:
+                pass
 if __name__ == '__main__':
     asm = Assembler()
     asm.startup()
