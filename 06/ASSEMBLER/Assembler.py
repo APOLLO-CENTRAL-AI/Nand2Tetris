@@ -35,6 +35,7 @@ comp = {
 }
 
 dest = {
+    'None' : '000',
     'M':     '001',
     'D':     '010',
     'DM':    '011',
@@ -45,6 +46,7 @@ dest = {
 }
 
 jump = {
+    'None' : '000',
     'JGT':   '001',
     'JEQ':   '010',
     'JGE':   '011',
@@ -74,10 +76,12 @@ class Assembler():
 
         # instructions
         self.symbol : str = None
-        self.dest : str= None
-        self.comp : str= None
-        self.jump : str= None
+        self.dest : str = None
+        self.comp : str = None
+        self.jump : str = None
         self.instruction_mode : bool = None
+        self.binary = None
+        self.outputfile = None
 
     def startup(self) -> None:
         print(
@@ -93,16 +97,27 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
             print(self.request, '\n')
             filepath = input()
         self.filepath = filepath
+        self.outputfile = re.findall('\w+(?=.)', filepath)[0] + '.hack'
 
-    def getasmFile(self) -> list:
+    def getasm(self) -> list:
         with open(self.filepath, mode = "r") as file:
             list = file.readlines()
         return list
 
+    def writefile(self) -> None:
+        with open(self.outputfile, 'w') as file:
+            pass
+
+    def writeoutput(self, input) -> None:
+        with open(self.outputfile, 'a') as output:
+            input = input + '\n'
+            output.write(input)
 
     def MnemonicsToBinary(self):
-        self.asm = self.getasmFile()
+        self.writefile()
+        self.asm = self.getasm()
         for line in self.asm:
+            self.binary = ''
             if re.search('//', line) is None:
                 line = line.rstrip()
                 line = line.replace(' ', '')
@@ -110,15 +125,24 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
                 match(self.Parser.instructionType()):
                     case "A_INSTRUCTION":
                         self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
-                    
+                        self.binary = '0' + f'{int(self.symbol):015b}' # symbol table comes later
+                        self.writeoutput(self.binary)
                     case "C_INSTRUCTION":
-                        self.dest = self.Parser.dest() if self.Parser.dest() else '000'
-                        self.jump = self.Parser.jump() if self.Parser.jump() else '000'
-                        self.comp = self.Parser.comp() if self.Parser.comp() else '0000000'
+                        self.dest = self.Parser.dest()
+                        self.jump = self.Parser.jump()
+                        self.comp = self.Parser.comp()
+                        self.binary = '111' + \
+                            self.Code.comp(self.comp) + \
+                            self.Code.dest(self.dest) + \
+                            self.Code.jump(self.jump)
+                        self.writeoutput(self.binary)
                     case "L_INSTRUCTION":
                         self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
+                        self.binary = '0' + f'{int(self.symbol):015b}'
+                        self.writeoutput(self.binary)
             else:
                 pass
+
 if __name__ == '__main__':
     asm = Assembler()
     asm.startup()
