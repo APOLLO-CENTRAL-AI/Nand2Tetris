@@ -21,16 +21,21 @@ class Parser():
             pass
 
     def symbol(self) -> str:
-        return re.findall('(?<=@|\()[^)]+', self.line)[0]
+        breakpoint()
+        return re.findall('(?<=@|\()[^)]+', self.line)[0] \
+        if re.search('(?<=@|\()[^)]+', self.line) else '000000000000000'
 
     def dest(self) -> str:
-        return re.findall("\w+(?==)", self.line)[0]
+        breakpoint()
+        return re.findall("\w+(?==)", self.line)[0] \
+        if re.search("\w+(?==)", self.line) else '000'
 
     def comp(self) -> str:
-        if re.search('(?<==).+', self.line):
-            return re.findall('(?<==).+', self.line)[0]
-        elif re.search('\w+(?=;)', self.line):
-            return re.findall('\w+(?=;)', self.line)[0]
+        breakpoint()
+        return re.findall('(?<==).+', self.line)[0] \
+        if re.search('=', self.line) else re.findall('\w+(?=;)', self.line)[0]
 
     def jump(self) -> str:
-        return re.findall("(?<=;)\w+", self.line)[0]
+        breakpoint()
+        return re.findall("(?<=;)\w+", self.line)[0] \
+        if re.search("(?<=;)\w+", self.line) else '000'

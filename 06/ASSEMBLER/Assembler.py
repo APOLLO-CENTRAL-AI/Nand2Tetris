@@ -102,13 +102,11 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
 
     def MnemonicsToBinary(self):
         self.asm = self.getasmFile()
-        breakpoint()
         for line in self.asm:
             if re.search('//', line) is None:
                 line = line.rstrip()
                 line = line.replace(' ', '')
                 self.Parser.line = line
-                breakpoint()
                 match(self.Parser.instructionType()):
                     case "A_INSTRUCTION":
                         self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
