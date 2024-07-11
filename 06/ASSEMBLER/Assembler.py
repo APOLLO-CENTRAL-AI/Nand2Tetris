@@ -1,5 +1,7 @@
 from Parser import Parser
 from Code import Code
+from os.path import exists
+import re
 
 comp = {
     '0':    '0101010',
@@ -53,48 +55,68 @@ jump = {
 }
 
 class Assembler():
-    x : bool
-    def __init__(self, asmFile):
+    def __init__(self):
+        # Composition
         self.Code = Code(comp, dest, jump)
         self.Parser = Parser()
-        x = False
-        while x is False:
-            x = self.verifyfile(asmFile)
-        self.asm = self.readasmFile(asmFile)
 
-    def verifyfile(self, asmFile : str) -> bool:
-        try:
-            with open(asmFile, "r") as x:
-                x.readline(1)
-                return True
-        except:
-            return False
-            
-    def readasmFile(self, asmFile : str) -> list:
-        with open(asmFile, mode = "r") as file:
+        # Static
+        self.greeting = '''
+        Nand2Tetris
+        Chapter: 06
+        Prog: Assembler
+        '''
+        self.request = 'Enter an assembly file name in your current directory.'
+
+        #Placeholders
+        self.filepath = None
+        self.asm = None
+
+        # instructions
+        self.symbol : str = None
+        self.dest : str= None
+        self.comp : str= None
+        self.jump : str= None
+        self.instruction_mode : bool = None
+
+    def startup(self) -> None:
+        print(
+'''Nand2Tetris
+Chapter: 06
+Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
+
+    def getpath(self) -> str:
+        print(self.request, ' \n')
+        filepath = input()
+        while (exists(filepath)) is False or \
+            re.search('\.asm', filepath) is None:
+            print(self.request, '\n')
+            filepath = input()
+        self.filepath = filepath
+
+    def getasmFile(self) -> list:
+        with open(self.filepath, mode = "r") as file:
             list = file.readlines()
         return list
 
+
     def MnemonicsToBinary(self):
+        self.asm = self.getasmFile()
         for line in self.asm:
             self.Parser.line = line.replace(' ', '')
             match(self.Parser.instructionType()):
                 case "A_INSTRUCTION":
-                    self.Parser.symbol()
+                    self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
+                    
                 case "C_INSTRUCTION":
-                    try:
-                        dest = self.Code.dest(self.Parser.dest())
-                    except:
-                        dest = '000'
-                    try:
-                        jump = self.Code.jump(self.Parser.jump())
-                    except:
-                        jump = '000'
-                    comp = self.Code.comp(self.Parser.comp())
+                    self.dest = self.Parser.dest() if self.Parser.dest() else '000'
+                    self.jump = self.Parser.jump() if self.Parser.jump() else '000'
+                    self.comp = self.Parser.comp() if self.Parser.comp() else '0000000'
                 case "L_INSTRUCTION":
-                    self.Parser.symbol()
+                    self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
 
 if __name__ == '__main__':
-    asm = Assembler(input("""
-Please enter assembler file name.\n
-File must be in current directory.\n"""))
+    asm = Assembler()
+    asm.startup()
+    asm.getpath()
+    asm.MnemonicsToBinary()
