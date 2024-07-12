@@ -26,7 +26,7 @@ class Parser():
 
     def dest(self) -> str:
         return re.findall("\w+(?==)", self.line)[0] \
-        if re.search("\w+(?==)", self.line) else '000000000000000'
+        if re.search("\w+(?==)", self.line) else 'None'
 
     def comp(self) -> str:
         return re.findall('(?<==).+', self.line)[0] \

@@ -1,5 +1,6 @@
 from Parser import Parser
 from Code import Code
+from Symbol_Table import SymbolTable
 from os.path import exists
 import re
 
@@ -61,6 +62,7 @@ class Assembler():
         # Composition
         self.Code = Code(comp, dest, jump)
         self.Parser = Parser()
+        self.SymbolTable = SymbolTable()
 
         # Static
         self.greeting = '''
@@ -80,12 +82,14 @@ class Assembler():
         self.comp : str = None
         self.jump : str = None
         self.instruction_mode : bool = None
-        self.binary = None
-        self.outputfile = None
+        self.binary : str = None
+        self.outputfile : str = None
+        self.varmap = 0
 
     def startup(self) -> None:
         print(
-'''Nand2Tetris
+'\n\n', '*' * 50,
+'''\nNand2Tetris
 Chapter: 06
 Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
 
@@ -105,7 +109,7 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
         return list
 
     def writefile(self) -> None:
-        with open(self.outputfile, 'w') as file:
+        with open(self.outputfile, 'w'):
             pass
 
     def writeoutput(self, input) -> None:
@@ -113,9 +117,79 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
             input = input + '\n'
             output.write(input)
 
+    def firstpass(self):
+        self.asm = self.getasm()
+        i = 0
+        for line in self.asm:
+            line = line.rstrip()
+            line = line.replace(' ', '')
+            if re.search('//', line) is None and line != '':
+                self.Parser.line = line
+                match(self.Parser.instructionType()):
+                    case 'A_INSTRUCTION':
+                        i += 1
+                    case 'C_INSTRUCTION':
+                        i += 1
+                    case 'L_INSTRUCTION':
+                        self.L_INSTRUCTION(i)
+
+    def L_INSTRUCTION(self, i : int) -> None:
+        self.SymbolTable.addEntry(
+            symbol = self.Parser.symbol(),
+            address = f'{i:015b}' # next L/C instruction address
+        )
+
+    def A_INSTRUCTION(self) -> None:
+        if re.search('(?<=@)\d+(?=.){0}', self.Parser.line):
+            self.symbol = self.Parser.symbol()    
+            self.binary = '0' + f'{int(self.symbol, 2):015b}'
+        elif self.SymbolTable.contains(self.Parser.symbol()):
+            self.symbol = self.SymbolTable.getAddress(
+                symbol = self.Parser.symbol()
+            )
+            self.binary = '0' + f'{int(self.symbol, 2):015b}'
+            # can't convert base 10 int to base 2 int
+        else:
+            self.SymbolTable.addEntry(
+                symbol = self.Parser.symbol(),
+                address = f'{self.varmap:015b}'
+            )
+            self.symbol = self.SymbolTable.getAddress(
+                symbol = self.Parser.symbol()
+            )
+            self.binary = '0' + f'{int(self.symbol, 2):015b}'
+            self.varmap += 1
+        self.writeoutput(self.binary)
+
+    def C_INSTRUCTION(self) -> None:
+        self.dest = self.Parser.dest()
+        self.jump = self.Parser.jump()
+        self.comp = self.Parser.comp()
+        self.binary = '111' + \
+            self.Code.comp(self.comp) + \
+            self.Code.dest(self.dest) + \
+            self.Code.jump(self.jump)
+        self.writeoutput(self.binary)
+
+    def secondpass(self):
+        self.writefile()
+        self.asm = self.getasm()
+        for line in self.asm:
+            self.binary = ''
+            line = line.rstrip()
+            line = line.replace(' ', '')
+            if re.search('//', line) is None and line != '':
+                self.Parser.line = line
+                match(self.Parser.instructionType()):
+                    case 'A_INSTRUCTION':
+                        self.A_INSTRUCTION()
+                    case 'C_INSTRUCTION':
+                        self.C_INSTRUCTION()
+
     def MnemonicsToBinary(self):
         self.writefile()
         self.asm = self.getasm()
+        i = 0
         for line in self.asm:
             self.binary = ''
             if re.search('//', line) is None:
@@ -125,7 +199,8 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
                 match(self.Parser.instructionType()):
                     case "A_INSTRUCTION":
                         self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
-                        self.binary = '0' + f'{int(self.symbol):015b}' # symbol table comes later
+                        self.binary = '0' + f'{int(self.symbol, 2):015b}' # symbol table comes later
+                        i += 1
                         self.writeoutput(self.binary)
                     case "C_INSTRUCTION":
                         self.dest = self.Parser.dest()
@@ -135,10 +210,11 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
                             self.Code.comp(self.comp) + \
                             self.Code.dest(self.dest) + \
                             self.Code.jump(self.jump)
+                        i += 1
                         self.writeoutput(self.binary)
                     case "L_INSTRUCTION":
                         self.symbol = self.Parser.symbol() if self.Parser.symbol() else '000000000000000'
-                        self.binary = '0' + f'{int(self.symbol):015b}'
+                        self.binary = '0' + f'{int(self.symbol, 2):015b}'
                         self.writeoutput(self.binary)
             else:
                 pass
@@ -147,4 +223,5 @@ if __name__ == '__main__':
     asm = Assembler()
     asm.startup()
     asm.getpath()
-    asm.MnemonicsToBinary()
+    asm.firstpass()
+    asm.secondpass()
