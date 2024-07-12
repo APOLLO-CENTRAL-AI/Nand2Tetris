@@ -1,6 +1,7 @@
 class SymbolTable():
     def __init__(self):
         self.symtable = {}
+        # symbol : str -> address : int
 
     def addEntry(self, symbol : str, address : int) -> None:
         self.symtable[symbol] = address

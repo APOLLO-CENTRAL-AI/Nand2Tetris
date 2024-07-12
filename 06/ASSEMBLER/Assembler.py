@@ -136,19 +136,18 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
     def L_INSTRUCTION(self, i : int) -> None:
         self.SymbolTable.addEntry(
             symbol = self.Parser.symbol(),
-            address = f'{i:015b}' # next L/C instruction address
+            address = i # next L/C instruction address
         )
 
     def A_INSTRUCTION(self) -> None:
         if re.search('(?<=@)\d+(?=.){0}', self.Parser.line):
             self.symbol = self.Parser.symbol()    
-            self.binary = '0' + f'{int(self.symbol, 2):015b}'
+            self.binary = '0' + f'{int(self.symbol):015b}'
         elif self.SymbolTable.contains(self.Parser.symbol()):
             self.symbol = self.SymbolTable.getAddress(
                 symbol = self.Parser.symbol()
             )
-            self.binary = '0' + f'{int(self.symbol, 2):015b}'
-            # can't convert base 10 int to base 2 int
+            self.binary = '0' + f'{self.symbol:015b}'
         else:
             self.SymbolTable.addEntry(
                 symbol = self.Parser.symbol(),
@@ -157,7 +156,8 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
             self.symbol = self.SymbolTable.getAddress(
                 symbol = self.Parser.symbol()
             )
-            self.binary = '0' + f'{int(self.symbol, 2):015b}'
+            self.binary = '0' + f'{self.symbol:015b}'
+            # Fuck typeless variables :3
             self.varmap += 1
         self.writeoutput(self.binary)
 
