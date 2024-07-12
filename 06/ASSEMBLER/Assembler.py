@@ -84,7 +84,7 @@ class Assembler():
         self.instruction_mode : bool = None
         self.binary : str = None
         self.outputfile : str = None
-        self.varmap = 0
+        self.varmap = 16
 
     def startup(self) -> None:
         print(
@@ -107,6 +107,15 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
         with open(self.filepath, mode = "r") as file:
             list = file.readlines()
         return list
+
+    def inputtobinary(self, input) -> str:
+        "Typeless var to int base 2"
+        if isinstance(input, str):
+            return f'{int(input):015b}'
+        elif isinstance(input, int):
+            return f'{input:015b}'
+        else:
+            raise WrongInput(f'Tried converting{input} to binary and failed.')
 
     def writefile(self) -> None:
         with open(self.outputfile, 'w'):
@@ -142,21 +151,21 @@ Prog: Assembler without symbol table\n\n''', '*' * 50, '\n', sep = '')
     def A_INSTRUCTION(self) -> None:
         if re.search('(?<=@)\d+(?=.){0}', self.Parser.line):
             self.symbol = self.Parser.symbol()    
-            self.binary = '0' + f'{int(self.symbol):015b}'
+            self.binary = '0' + f'{self.inputtobinary(self.symbol)}'
         elif self.SymbolTable.contains(self.Parser.symbol()):
             self.symbol = self.SymbolTable.getAddress(
                 symbol = self.Parser.symbol()
             )
-            self.binary = '0' + f'{self.symbol:015b}'
+            self.binary = '0' + f'{self.inputtobinary(self.symbol)}'
         else:
             self.SymbolTable.addEntry(
                 symbol = self.Parser.symbol(),
-                address = f'{self.varmap:015b}'
+                address = self.varmap
             )
             self.symbol = self.SymbolTable.getAddress(
                 symbol = self.Parser.symbol()
             )
-            self.binary = '0' + f'{self.symbol:015b}'
+            self.binary = '0' + f'{self.inputtobinary(self.symbol)}'
             # Fuck typeless variables :3
             self.varmap += 1
         self.writeoutput(self.binary)
@@ -225,3 +234,6 @@ if __name__ == '__main__':
     asm.getpath()
     asm.firstpass()
     asm.secondpass()
+
+class WrongInput(Exception):
+    pass
