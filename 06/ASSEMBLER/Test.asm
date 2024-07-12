@@ -1,4 +1,0 @@
-(START)
-@10
-D=A
-D;JGT
